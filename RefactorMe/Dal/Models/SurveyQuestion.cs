@@ -5,7 +5,8 @@ public class SurveyQuestion
     public enum QuestionAnswerType
     {
         Boolean,
-        Number
+        Number,
+        Poll
     }
 
     public int Id { get; set; }
@@ -13,4 +14,6 @@ public class SurveyQuestion
     public string Text { get; set; }
     public QuestionAnswerType AnswerType { get; set; }
     public int NumberMin { get; set; }
+    public ICollection<PollOption> PollOptions { get; set; }
+    public int ValidPollOptionId { get; set; }
 }

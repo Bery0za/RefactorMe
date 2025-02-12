@@ -20,6 +20,7 @@ public class SurveyService
 
         return await db.Surveys
             .Include(s => s.Questions)
+            .ThenInclude(q => q.PollOptions)
             .Where(s => s.IsActive && !userCompletedSurveys.Contains(s.Id))
             .Select(s => new SurveyDto()
             {
@@ -29,7 +30,13 @@ public class SurveyService
                     {
                         Id = q.Id,
                         Text = q.Text,
-                        Type = q.AnswerType
+                        Type = q.AnswerType,
+                        PollOptions = q.PollOptions
+                            .Select(po => new SurveyDto.SurveyQuestionDto.PollOptionDto()
+                        {
+                            Id = po.Id,
+                            Text = po.Text
+                        }).ToArray()
                     }).ToArray()
             }).ToArrayAsync();
     }
@@ -57,11 +64,9 @@ public class SurveyService
                 throw new ArgumentException($"Question {answer.QuestionId} not found.");
             }
 
-            if (question.AnswerType == SurveyQuestion.QuestionAnswerType.Boolean && answer.Value is true)
-            {
-                score++;
-            }
-            else if (question.AnswerType == SurveyQuestion.QuestionAnswerType.Number && answer.Value is int intValue && intValue > question.NumberMin)
+            if ((question.AnswerType == SurveyQuestion.QuestionAnswerType.Boolean && answer.Value is true)
+                || (question.AnswerType == SurveyQuestion.QuestionAnswerType.Number && answer.Value is int intValue && intValue > question.NumberMin)
+                || (question.AnswerType == SurveyQuestion.QuestionAnswerType.Poll && answer.Value is int pollOptionId && pollOptionId == question.ValidPollOptionId))
             {
                 score++;
             }
