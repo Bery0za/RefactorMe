@@ -57,11 +57,11 @@ public class SurveyService
                 throw new ArgumentException($"Question {v.QuestionId} not found.");
             }
 
-            if (q.AnswerType == SurveyQuestion.QuestionAnswerType.Boolean && (bool)v.Value == true)
+            if (q.AnswerType == SurveyQuestion.QuestionAnswerType.Boolean && v.Value is true)
             {
                 s++;
             }
-            else if (q.AnswerType == SurveyQuestion.QuestionAnswerType.Number && (int)v.Value > q.NumberMin)
+            else if (q.AnswerType == SurveyQuestion.QuestionAnswerType.Number && v.Value is int intValue && intValue > q.NumberMin)
             {
                 s++;
             }
