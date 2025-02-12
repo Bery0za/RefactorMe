@@ -40,6 +40,44 @@ public class SurveyService
                     }).ToArray()
             }).ToArrayAsync();
     }
+    
+    /// <summary>
+    /// Получение статистики пользователя
+    /// </summary>
+    public async Task<UserStatsDto> GetUserStats(int userId)
+    {
+        await using var db = new AppDbContext();
+
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        
+        if (user == null)
+        {
+            throw new ArgumentException($"User {userId} not found.");
+        }
+
+        var fromDate = DateTime.Now.AddDays(-30);
+
+        var last30DaysStats = await db.SurveyResults
+            .Where(u => u.UserId == userId && u.CreatedAt > fromDate)
+            .GroupBy(u => u.Id)
+            .Select(g => new { Count = g.Count(), Score = g.Sum(sr => sr.Score) })
+            .FirstOrDefaultAsync();
+        
+        var totalStats = await db.SurveyResults
+            .Where(u => u.UserId == userId)
+            .GroupBy(u => u.Id)
+            .Select(g => new { Count = g.Count(), Score = g.Sum(sr => sr.Score) })
+            .FirstOrDefaultAsync();
+
+        return new UserStatsDto()
+        {
+            Name = user.Name,
+            Last30DaysSurveysCount = last30DaysStats?.Count ?? 0,
+            Last30DaysScore = last30DaysStats?.Score ?? 0,
+            TotalSurveysCount = totalStats?.Count ?? 0,
+            TotalScore = totalStats?.Score ?? 0
+        };
+    }
 
     /// <summary>
     /// Сохранение результатов опроса
