@@ -10,7 +10,7 @@ public class SurveyService
     /// <summary>
     /// Получение опросов для пользователя
     /// </summary>
-    public async Task<SurveyDto[]> GetSurveys(int userId)
+    public async Task<SurveyDto[]> GetIncompleteSurveys(int userId)
     {
         await using var db = new AppDbContext();
 
@@ -19,12 +19,12 @@ public class SurveyService
             .Select(sr => sr.SurveyId);
 
         return await db.Surveys
-            .Include(x => x.Questions)
-            .Where(x => x.IsActive && !userCompletedSurveys.Contains(x.Id))
-            .Select(x => new SurveyDto()
+            .Include(s => s.Questions)
+            .Where(s => s.IsActive && !userCompletedSurveys.Contains(s.Id))
+            .Select(s => new SurveyDto()
             {
-                Id = x.Id,
-                Questions = x.Questions
+                Id = s.Id,
+                Questions = s.Questions
                     .Select(q => new SurveyDto.SurveyQuestionDto()
                     {
                         Id = q.Id,
@@ -49,21 +49,21 @@ public class SurveyService
             .Where(sq => questionIds.Contains(sq.Id))
             .ToDictionaryAsync(sq => sq.Id);
 
-        var s = 0;
-        foreach (var v in value.Answers)
+        var score = 0;
+        foreach (var answer in value.Answers)
         {
-            if (!questions.TryGetValue(v.QuestionId, out var q))
+            if (!questions.TryGetValue(answer.QuestionId, out var question))
             {
-                throw new ArgumentException($"Question {v.QuestionId} not found.");
+                throw new ArgumentException($"Question {answer.QuestionId} not found.");
             }
 
-            if (q.AnswerType == SurveyQuestion.QuestionAnswerType.Boolean && v.Value is true)
+            if (question.AnswerType == SurveyQuestion.QuestionAnswerType.Boolean && answer.Value is true)
             {
-                s++;
+                score++;
             }
-            else if (q.AnswerType == SurveyQuestion.QuestionAnswerType.Number && v.Value is int intValue && intValue > q.NumberMin)
+            else if (question.AnswerType == SurveyQuestion.QuestionAnswerType.Number && answer.Value is int intValue && intValue > question.NumberMin)
             {
-                s++;
+                score++;
             }
         }
 
@@ -71,7 +71,7 @@ public class SurveyService
         {
             UserId = value.UserId,
             SurveyId = value.SurveyId,
-            Score = s,
+            Score = score,
             CreatedAt = DateTime.Now
         });
 
