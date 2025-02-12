@@ -14,9 +14,13 @@ public class SurveyService
     {
         await using var db = new AppDbContext();
 
+        var userCompletedSurveys = db.SurveyResults
+            .Where(sr => sr.UserId == userId)
+            .Select(sr => sr.SurveyId);
+
         return await db.Surveys
             .Include(x => x.Questions)
-            .Where(x => x.IsActive && !db.SurveyResults.Any(sr => sr.UserId == userId && sr.SurveyId == x.Id))
+            .Where(x => x.IsActive && !userCompletedSurveys.Contains(x.Id))
             .Select(x => new SurveyDto()
             {
                 Id = x.Id,
