@@ -40,7 +40,6 @@ public class SurveyService
     public async Task SaveAnswers(SurveyAnswersDto value)
     {
         await using var db = new AppDbContext();
-        await using var tr = await db.Database.BeginTransactionAsync();
 
         var questions = db.SurveyQuestions;
 
@@ -68,6 +67,5 @@ public class SurveyService
         });
 
         await db.SaveChangesAsync();
-        await tr.CommitAsync();
     }
 }
