@@ -41,12 +41,21 @@ public class SurveyService
     {
         await using var db = new AppDbContext();
 
-        var questions = db.SurveyQuestions;
+        var questionIds = value.Answers
+            .Select(a => a.QuestionId)
+            .ToArray();
+        
+        var questions = await db.SurveyQuestions
+            .Where(sq => questionIds.Contains(sq.Id))
+            .ToDictionaryAsync(sq => sq.Id);
 
         var s = 0;
         foreach (var v in value.Answers)
         {
-            var q = questions.First(x => x.Id == v.QuestionId);
+            if (!questions.TryGetValue(v.QuestionId, out var q))
+            {
+                throw new ArgumentException($"Question {v.QuestionId} not found.");
+            }
 
             if (q.AnswerType == SurveyQuestion.QuestionAnswerType.Boolean && (bool)v.Value == true)
             {
